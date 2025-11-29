@@ -21,7 +21,12 @@
 - ✅ 여러 행 추가/삭제
 - ✅ 각 행별 독립적인 URL 생성 및 복사
 - ✅ 전체 초기화 기능
-- ✅ URL 유효성 검사
+- ✅ 토스트 알림 시스템 (복사/붙여넣기 등)
+- ✅ 키보드 네비게이션 (방향키로 셀 이동, Enter로 아래 이동)
+- ✅ 셀 단위 선택 (Notion 스타일, ESC로 셀/행 선택 모드 전환)
+- ✅ 셀 범위 복사/붙여넣기 (Shift+방향키로 범위 선택)
+- ✅ 행 범위 복사/붙여넣기
+- ✅ 키보드 단축키 (Cmd/Ctrl+S: 저장, Cmd/Ctrl+A: 전체 선택)
 
 ## 🛠️ 기술 스택
 
@@ -61,15 +66,26 @@ npm run preview
 ```
 src/
 ├── components/
-│   ├── BuilderTab.jsx      # 메인 빌더 화면
-│   └── UTMRow.jsx          # UTM 입력 행 컴포넌트
+│   ├── BuilderTab.jsx        # 메인 빌더 화면
+│   ├── UTMTableRow.jsx       # UTM 테이블 행 컴포넌트
+│   ├── UTMTableInput.jsx     # UTM 입력 필드 컴포넌트
+│   ├── BuilderTableHeader.jsx # 테이블 헤더
+│   ├── SavedTab.jsx          # 저장된 URL 관리
+│   ├── UTMGuide.jsx          # UTM 가이드
+│   └── Toast.jsx             # 토스트 알림 컴포넌트
 ├── hooks/
-│   └── useLocalStorage.js  # localStorage 관리 Hook
+│   ├── useLocalStorage.js    # localStorage 관리 Hook
+│   ├── useKeyboardNavigation.js # 키보드 네비게이션 (기본)
+│   ├── useCellSelection.js   # 셀 선택 및 복붙
+│   ├── useRowSelection.js    # 행 선택 및 복붙
+│   ├── useRowClipboard.js    # 행 복사/붙여넣기
+│   └── useToast.js            # 토스트 알림 Hook
 ├── utils/
-│   ├── urlBuilder.js       # UTM URL 생성 로직
-│   └── validation.js       # URL 유효성 검사
-├── App.jsx                 # 루트 컴포넌트
-└── main.jsx               # 진입점
+│   ├── urlBuilder.js         # UTM URL 생성 로직
+│   ├── validation.js         # URL 유효성 검사
+│   └── rowFactory.js         # 행 생성 유틸리티
+├── App.jsx                   # 루트 컴포넌트
+└── main.jsx                  # 진입점
 ```
 
 ## 🎨 주요 기능 설명
@@ -91,11 +107,11 @@ src/
 
 ## 📝 향후 계획
 
-- [ ] 저장된 URL 히스토리 기능
-- [ ] 복사 성공 토스트 알림
-- [ ] 키보드 단축키 지원
+- [ ] 프리셋 시스템 (자주 사용하는 Source+Medium+Campaign 템플릿)
 - [ ] URL 단축 기능 (Bitly API 연동)
 - [ ] QR 코드 생성
+- [ ] 통계 대시보드
+- [ ] 모바일 반응형 디자인 (테이블 → 카드 뷰)
 
 ## 📄 라이선스
 

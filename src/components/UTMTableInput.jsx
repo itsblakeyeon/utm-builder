@@ -19,7 +19,7 @@ function UTMTableInput({
       type="text"
       value={value}
       onChange={(e) => onChange(rowId, field, e.target.value)}
-      onFocus={() => onFocus(field)}
+      onFocus={() => onFocus(field, rowIndex)}
       onCompositionStart={onCompositionStart}
       onCompositionEnd={onCompositionEnd}
       onKeyDown={(e) => onKeyDown(e, rowIndex, field)}

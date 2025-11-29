@@ -1,8 +1,13 @@
 import { useState } from "react";
+import { useToast } from "../hooks/useToast";
+import Toast from "./Toast";
 
 function SavedTab({ savedItems, onDelete, onDeleteAll, onUpdateComment }) {
   const [editingId, setEditingId] = useState(null);
   const [editComment, setEditComment] = useState("");
+
+  // 토스트 알림 훅
+  const { toast, showToast, hideToast } = useToast();
 
   // 코멘트 편집 시작
   const startEdit = (item) => {
@@ -26,7 +31,7 @@ function SavedTab({ savedItems, onDelete, onDeleteAll, onUpdateComment }) {
   // URL 복사
   const copyUrl = (url) => {
     navigator.clipboard.writeText(url);
-    alert("URL이 클립보드에 복사되었습니다!");
+    showToast("URL이 클립보드에 복사되었습니다!", "success");
   };
 
   // 날짜 포맷팅
@@ -186,6 +191,11 @@ function SavedTab({ savedItems, onDelete, onDeleteAll, onUpdateComment }) {
           </div>
         ))}
       </div>
+
+      {/* 토스트 알림 */}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }
