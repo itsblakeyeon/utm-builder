@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import BuilderTableHeader from "./BuilderTableHeader";
 import UTMTableRow from "./UTMTableRow";
 import Toast from "./Toast";
+import { STORAGE_KEYS, DEBOUNCE_DELAY, FIELDS } from "../constants";
 
 function BuilderTab({ onSave }) {
   // 편집 중인 셀 상태 관리 (rowIndex와 field로 특정)
@@ -13,7 +14,7 @@ function BuilderTab({ onSave }) {
 
   // 행 데이터 상태 (단순한 useState)
   const [rows, setRows] = useState(() => {
-    const saved = localStorage.getItem("utmBuilderRows");
+    const saved = localStorage.getItem(STORAGE_KEYS.ROWS);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -25,7 +26,7 @@ function BuilderTab({ onSave }) {
   });
 
   // 편집 가능한 필드 목록 (키보드 네비게이션용)
-  const fields = ["baseUrl", "source", "medium", "campaign", "term", "content"];
+  const fields = FIELDS;
 
   // 토스트 알림 훅
   const { toast, showToast, hideToast } = useToast();
@@ -54,8 +55,6 @@ function BuilderTab({ onSave }) {
     selectedCellRange,
     selectedRowIndex,
     selectedRange,
-    isComposing,
-    setIsComposing,
     handleCellSelectionKeyDown,
     handleRowSelectionKeyDown,
     handleInputFocus,
@@ -168,8 +167,8 @@ function BuilderTab({ onSave }) {
   // localStorage에 자동 저장 (디바운스)
   useEffect(() => {
     const timer = setTimeout(() => {
-      localStorage.setItem("utmBuilderRows", JSON.stringify(rows));
-    }, 500); // 500ms 후 저장
+      localStorage.setItem(STORAGE_KEYS.ROWS, JSON.stringify(rows));
+    }, DEBOUNCE_DELAY);
 
     return () => clearTimeout(timer);
   }, [rows]);

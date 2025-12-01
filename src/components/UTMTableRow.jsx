@@ -1,5 +1,6 @@
 import { buildUTMUrl } from "../utils/urlBuilder";
 import UTMTableInput from "./UTMTableInput";
+import { FIELD_CONFIG } from "../constants";
 
 /**
  * UTM 테이블의 개별 행을 렌더링하는 컴포넌트
@@ -17,8 +18,6 @@ function UTMTableRow({
   onInputFocus,
   onKeyDown,
   onCellSelectionKeyDown,
-  onCompositionStart,
-  onCompositionEnd,
   onCopyUrl,
   onDeleteRow,
   onRowSelectionKeyDown,
@@ -34,15 +33,6 @@ function UTMTableRow({
 
   // 행이 선택되었는지 확인 (단일 선택 또는 범위 선택)
   const isRowSelected = selectedRowIndex === index || isInRange;
-
-  const fields = [
-    { key: "baseUrl", placeholder: "https://example.com" },
-    { key: "source", placeholder: "google" },
-    { key: "medium", placeholder: "cpc" },
-    { key: "campaign", placeholder: "spring_sale" },
-    { key: "term", placeholder: "running shoes" },
-    { key: "content", placeholder: "banner_ad" },
-  ];
 
   return (
     <tr
@@ -72,7 +62,7 @@ function UTMTableRow({
       </td>
 
       {/* 입력 필드들 */}
-      {fields.map((field) => {
+      {FIELD_CONFIG.map((field) => {
         // 단일 셀 선택 확인
         const isCellSelected =
           selectedCell &&
@@ -94,12 +84,12 @@ function UTMTableRow({
             );
 
         // 필드가 범위 내에 있는지 확인
-        const currentFieldIndex = fields.findIndex((f) => f.key === field.key);
+        const currentFieldIndex = FIELD_CONFIG.findIndex((f) => f.key === field.key);
         const startFieldIndex = selectedCellRange
-          ? fields.findIndex((f) => f.key === selectedCellRange.start.field)
+          ? FIELD_CONFIG.findIndex((f) => f.key === selectedCellRange.start.field)
           : -1;
         const endFieldIndex = selectedCellRange
-          ? fields.findIndex((f) => f.key === selectedCellRange.end.field)
+          ? FIELD_CONFIG.findIndex((f) => f.key === selectedCellRange.end.field)
           : -1;
 
         const isFieldInRange =
@@ -139,8 +129,6 @@ function UTMTableRow({
                     ? (e) => onCellSelectionKeyDown(e, index, field.key)  // 셀 선택 모드
                     : onKeyDown  // 기본
               }
-              onCompositionStart={onCompositionStart}
-              onCompositionEnd={onCompositionEnd}
               isEditing={isEditing}
               isCellSelected={isCellSelected}
               onCellClick={onCellClick}

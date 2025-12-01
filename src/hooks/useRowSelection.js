@@ -91,32 +91,23 @@ export const useRowSelection = (
       return;
     }
 
-    // ArrowUp: 위 행 선택 (범위 선택 중이면 시작점 기준으로 이동)
-    if (e.key === "ArrowUp") {
+    // ArrowUp/Down: 행 이동 (범위 선택 중이면 시작점 기준으로 이동)
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
       e.preventDefault();
+      const delta = e.key === "ArrowUp" ? -1 : 1;
+      const boundCheck = e.key === "ArrowUp"
+        ? (idx) => idx > 0
+        : (idx) => idx < rows.length - 1;
+
       if (selectedRange) {
-        // 범위 선택 중이면 시작점에서 위로 이동
+        // 범위 선택 중이면 시작점에서 이동
         const startIndex = selectedRange.start;
-        if (startIndex > 0) {
-          setSelectedRowIndex(startIndex - 1);
+        if (boundCheck(startIndex)) {
+          setSelectedRowIndex(startIndex + delta);
           setSelectedRange(null);
         }
-      } else if (rowIndex > 0) {
-        setSelectedRowIndex(rowIndex - 1);
-      }
-    }
-    // ArrowDown: 아래 행 선택 (범위 선택 중이면 시작점 기준으로 이동)
-    else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (selectedRange) {
-        // 범위 선택 중이면 시작점에서 아래로 이동
-        const startIndex = selectedRange.start;
-        if (startIndex < rows.length - 1) {
-          setSelectedRowIndex(startIndex + 1);
-          setSelectedRange(null);
-        }
-      } else if (rowIndex < rows.length - 1) {
-        setSelectedRowIndex(rowIndex + 1);
+      } else if (boundCheck(rowIndex)) {
+        setSelectedRowIndex(rowIndex + delta);
       }
     }
     // Delete 또는 Backspace: 행 삭제 (범위 선택 중이면 모든 행 삭제)

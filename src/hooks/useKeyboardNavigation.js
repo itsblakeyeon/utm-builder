@@ -26,9 +26,6 @@ export const useKeyboardNavigation = (
   // 마지막으로 포커스된 필드 (행 선택 모드 진입 전)
   const [lastFocusedField, setLastFocusedField] = useState("baseUrl");
 
-  // 한글 입력 조합 중 여부 (IME composition)
-  const [isComposing, setIsComposing] = useState(false);
-
   // 토스트 알림 훅
   const { showToast } = useToast();
 
@@ -112,9 +109,6 @@ export const useKeyboardNavigation = (
   const handleKeyDown = (e, rowIndex, field) => {
     // Chrome 확장 프로그램 충돌 방지
     if (!e || !e.target) return;
-
-    // 한글 조합 중에는 키보드 네비게이션 무시
-    if (isComposing) return;
 
     const input = e.target;
     const cursorAtStart = input.selectionStart === 0;
@@ -221,8 +215,6 @@ export const useKeyboardNavigation = (
     selectedCellRange,
     selectedRowIndex,
     selectedRange,
-    isComposing,
-    setIsComposing,
     handleCellSelectionKeyDown: wrappedCellSelectionKeyDown,
     handleRowSelectionKeyDown,
     handleInputFocus,

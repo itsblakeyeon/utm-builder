@@ -190,77 +190,51 @@ export const useCellSelection = (rows, setRows, fields, showToast, setEditingCel
     }
 
     // 방향키: 인접 셀로 이동 (범위 선택 중이면 시작점 기준)
-    if (e.key === "ArrowUp") {
+    const arrowKeys = {
+      ArrowUp: { rowDelta: -1, fieldDelta: 0, rowBoundCheck: (r) => r > 0 },
+      ArrowDown: { rowDelta: 1, fieldDelta: 0, rowBoundCheck: (r) => r < rows.length - 1 },
+      ArrowLeft: { rowDelta: 0, fieldDelta: -1, fieldBoundCheck: (f) => f > 0 },
+      ArrowRight: { rowDelta: 0, fieldDelta: 1, fieldBoundCheck: (f) => f < fields.length - 1 },
+    };
+
+    const arrowConfig = arrowKeys[e.key];
+    if (arrowConfig) {
       e.preventDefault();
       const currentRange = selectedCellRangeRef.current;
+
       if (currentRange) {
-        // 범위 선택 중이면 시작점 기준으로 위로 이동
-        const startRow = currentRange.start.rowIndex;
-        const startField = currentRange.start.field;
-        if (startRow > 0) {
-          setSelectedCell({ rowIndex: startRow - 1, field: startField });
-          setSelectedCellRange(null);
-        }
-      } else if (rowIndex > 0) {
-        setSelectedCell({ rowIndex: rowIndex - 1, field });
-        setSelectedCellRange(null);
-      }
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const currentRange = selectedCellRangeRef.current;
-      if (currentRange) {
-        // 범위 선택 중이면 시작점 기준으로 아래로 이동
-        const startRow = currentRange.start.rowIndex;
-        const startField = currentRange.start.field;
-        if (startRow < rows.length - 1) {
-          setSelectedCell({ rowIndex: startRow + 1, field: startField });
-          setSelectedCellRange(null);
-        }
-      } else if (rowIndex < rows.length - 1) {
-        setSelectedCell({ rowIndex: rowIndex + 1, field });
-        setSelectedCellRange(null);
-      }
-      return;
-    }
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      const currentRange = selectedCellRangeRef.current;
-      if (currentRange) {
-        // 범위 선택 중이면 시작점 기준으로 왼쪽으로 이동
+        // 범위 선택 중이면 시작점 기준으로 이동
         const startRow = currentRange.start.rowIndex;
         const startField = currentRange.start.field;
         const startFieldIndex = fields.indexOf(startField);
-        if (startFieldIndex > 0) {
-          setSelectedCell({ rowIndex: startRow, field: fields[startFieldIndex - 1] });
+
+        const newRow = startRow + arrowConfig.rowDelta;
+        const newFieldIndex = startFieldIndex + arrowConfig.fieldDelta;
+
+        const canMoveRow = arrowConfig.rowBoundCheck ? arrowConfig.rowBoundCheck(startRow) : true;
+        const canMoveField = arrowConfig.fieldBoundCheck ? arrowConfig.fieldBoundCheck(startFieldIndex) : true;
+
+        if (canMoveRow && canMoveField) {
+          setSelectedCell({
+            rowIndex: newRow,
+            field: arrowConfig.fieldDelta !== 0 ? fields[newFieldIndex] : startField
+          });
           setSelectedCellRange(null);
         }
       } else {
+        // 단일 셀 선택 중
         const currentFieldIndex = fields.indexOf(field);
-        if (currentFieldIndex > 0) {
-          setSelectedCell({ rowIndex, field: fields[currentFieldIndex - 1] });
-          setSelectedCellRange(null);
-        }
-      }
-      return;
-    }
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-      const currentRange = selectedCellRangeRef.current;
-      if (currentRange) {
-        // 범위 선택 중이면 시작점 기준으로 오른쪽으로 이동
-        const startRow = currentRange.start.rowIndex;
-        const startField = currentRange.start.field;
-        const startFieldIndex = fields.indexOf(startField);
-        if (startFieldIndex < fields.length - 1) {
-          setSelectedCell({ rowIndex: startRow, field: fields[startFieldIndex + 1] });
-          setSelectedCellRange(null);
-        }
-      } else {
-        const currentFieldIndex = fields.indexOf(field);
-        if (currentFieldIndex < fields.length - 1) {
-          setSelectedCell({ rowIndex, field: fields[currentFieldIndex + 1] });
+        const newRow = rowIndex + arrowConfig.rowDelta;
+        const newFieldIndex = currentFieldIndex + arrowConfig.fieldDelta;
+
+        const canMoveRow = arrowConfig.rowBoundCheck ? arrowConfig.rowBoundCheck(rowIndex) : true;
+        const canMoveField = arrowConfig.fieldBoundCheck ? arrowConfig.fieldBoundCheck(currentFieldIndex) : true;
+
+        if (canMoveRow && canMoveField) {
+          setSelectedCell({
+            rowIndex: newRow,
+            field: arrowConfig.fieldDelta !== 0 ? fields[newFieldIndex] : field
+          });
           setSelectedCellRange(null);
         }
       }

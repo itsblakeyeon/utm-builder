@@ -15,8 +15,6 @@ function UTMTableInput({
   onChange,
   onFocus,
   onKeyDown,
-  onCompositionStart,
-  onCompositionEnd,
   isEditing,
   isCellSelected,
   onCellClick,
@@ -64,8 +62,6 @@ function UTMTableInput({
       value={value}
       onChange={(e) => onChange(rowId, field, e.target.value)}
       onFocus={() => onFocus(field, rowIndex)}
-      onCompositionStart={onCompositionStart}
-      onCompositionEnd={onCompositionEnd}
       onKeyDown={(e) => onKeyDown(e, rowIndex, field)}
       data-row-index={rowIndex}
       data-field={field}
