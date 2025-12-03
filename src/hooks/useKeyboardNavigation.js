@@ -256,11 +256,17 @@ export const useKeyboardNavigation = (
     }
     // ArrowDown: 아래 행으로 이동
     else if (e.key === "ArrowDown") {
+      // 한글 조합 중이면 무시
+      if (isComposing) return;
+      
       e.preventDefault();
       focusCell(rowIndex + 1, field);
     }
     // ArrowUp: 위 행으로 이동
     else if (e.key === "ArrowUp") {
+      // 한글 조합 중이면 무시
+      if (isComposing) return;
+      
       e.preventDefault();
       focusCell(rowIndex - 1, field);
     }
@@ -287,6 +293,10 @@ export const useKeyboardNavigation = (
     selectedCellRange,
     selectedRowIndex,
     selectedRange,
+    setSelectedCell,
+    setSelectedCellRange,
+    setSelectedRowIndex,
+    setSelectedRange,
     handleCellSelectionKeyDown: wrappedCellSelectionKeyDown,
     handleRowSelectionKeyDown,
     handleInputFocus,
@@ -294,5 +304,7 @@ export const useKeyboardNavigation = (
     isComposing,
     onCompositionStart: () => setIsComposing(true),
     onCompositionEnd: () => setIsComposing(false),
+    // 외부에서 특정 셀로 포커스 이동할 수 있도록 노출
+    focusCell,
   };
 };

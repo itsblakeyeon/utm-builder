@@ -2,34 +2,94 @@ import { buildUTMUrl } from "../utils/urlBuilder";
 import { createEmptyRow } from "../utils/rowFactory";
 import { useKeyboardNavigation } from "../hooks/useKeyboardNavigation";
 import { useToast } from "../hooks/useToast";
-import { useEffect, useState } from "react";
+import { useHistory } from "../hooks/useHistory";
+import { useEffect, useCallback } from "react";
 import BuilderTableHeader from "./BuilderTableHeader";
 import UTMTableRow from "./UTMTableRow";
 import Toast from "./Toast";
 import { STORAGE_KEYS, DEBOUNCE_DELAY, FIELDS } from "../constants";
 
 function BuilderTab({ onSave }) {
-  // 편집 중인 셀 상태 관리 (rowIndex와 field로 특정)
-  const [editingCell, setEditingCell] = useState(null);
-
-  // 행 데이터 상태 (단순한 useState)
-  const [rows, setRows] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ROWS);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return [createEmptyRow(), createEmptyRow(), createEmptyRow()];
-      }
-    }
-    return [createEmptyRow(), createEmptyRow(), createEmptyRow()];
-  });
-
   // 편집 가능한 필드 목록 (키보드 네비게이션용)
   const fields = FIELDS;
 
   // 토스트 알림 훅
   const { toast, showToast, hideToast } = useToast();
+
+  // rows + 커서 상태를 함께 관리하는 히스토리 상태
+  const [historyState, setHistoryState, { undo, redo, canUndo, canRedo }] =
+    useHistory(
+      () => {
+        const saved = localStorage.getItem(STORAGE_KEYS.ROWS);
+        const initialRows = (() => {
+          if (saved) {
+            try {
+              return JSON.parse(saved);
+            } catch (e) {
+              return [createEmptyRow(), createEmptyRow(), createEmptyRow()];
+            }
+          }
+          return [createEmptyRow(), createEmptyRow(), createEmptyRow()];
+        })();
+
+        if (saved) {
+          try {
+            // saved가 rows 배열이라고 가정하고 historyState 형태로 래핑
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              return {
+                rows: parsed,
+                editingCell: null,
+              };
+            }
+            // 혹시 나중에 구조가 바뀌었을 경우 안전하게 처리
+            return {
+              rows: initialRows,
+              editingCell: null,
+            };
+          } catch (e) {
+            return {
+              rows: initialRows,
+              editingCell: null,
+            };
+          }
+        }
+        return {
+          rows: initialRows,
+          editingCell: null,
+        };
+      },
+      {
+        maxHistory: 50,
+        debounceMs: 500,
+      }
+    );
+
+  const { rows, editingCell } = historyState;
+
+  // rows만 부분 업데이트하기 위한 헬퍼
+  const setRows = (updaterOrValue, preserveEditingCell = true) => {
+    setHistoryState((prev) => {
+      const prevRows = prev.rows;
+      const nextRows =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(prevRows)
+          : updaterOrValue;
+      return {
+        ...prev,
+        rows: nextRows,
+        editingCell: preserveEditingCell ? prev.editingCell : null,
+      };
+    });
+  };
+
+  // editingCell만 부분 업데이트하기 위한 헬퍼
+  const setEditingCell = (nextEditingCell) => {
+    setHistoryState((prev) => ({
+      ...prev,
+      editingCell: nextEditingCell,
+    }));
+  };
 
   // 행 삭제 (키보드 네비게이션 훅에서 사용하기 위해 먼저 정의)
   const deleteRow = (id) => {
@@ -37,7 +97,44 @@ function BuilderTab({ onSave }) {
       showToast("최소 1개의 행은 필요합니다!", "warning");
       return;
     }
-    setRows(rows.filter((row) => row.id !== id));
+    
+    // 삭제할 행의 인덱스 찾기
+    const index = rows.findIndex((row) => row.id === id);
+    if (index === -1) return;
+    
+    // 삭제 후 남을 행들
+    const rowsAfter = rows.filter((row) => row.id !== id);
+    
+    // 포커스할 행 인덱스 계산 (삭제 후 상태)
+    let targetIndex;
+    if (index > 0) {
+      // 위 행 선택
+      targetIndex = index - 1;
+    } else {
+      // 첫 행 삭제 시 새 첫 행 선택
+      targetIndex = 0;
+    }
+    
+    // 마지막 행 삭제 시 보정
+    if (targetIndex >= rowsAfter.length) {
+      targetIndex = rowsAfter.length - 1;
+    }
+    
+    // 히스토리 기록을 위해 두 단계로 나눔:
+    // 1. editingCell을 삭제될 행으로 설정 (히스토리 기록: 삭제 전 상태, 삭제될 행에 포커스)
+    //    → Undo 시 이 상태로 돌아가면 삭제될 행에 포커스가 있음
+    setHistoryState((prev) => ({
+      ...prev,
+      editingCell: { rowIndex: index, field: fields[0] },
+    }));
+    
+    // 2. 행 삭제 및 위 행으로 포커스 (히스토리 기록: 삭제 후 상태, 위 행에 포커스)
+    //    → Redo 시 이 상태로 돌아가면 행이 삭제되고 위 행에 포커스가 있음
+    setHistoryState((prev) => ({
+      ...prev,
+      rows: rowsAfter,
+      editingCell: { rowIndex: targetIndex, field: fields[0] },
+    }));
   };
 
   // 체크박스 토글
@@ -55,6 +152,10 @@ function BuilderTab({ onSave }) {
     selectedCellRange,
     selectedRowIndex,
     selectedRange,
+    setSelectedCell,
+    setSelectedCellRange,
+    setSelectedRowIndex,
+    setSelectedRange,
     handleCellSelectionKeyDown,
     handleRowSelectionKeyDown,
     handleInputFocus,
@@ -62,7 +163,44 @@ function BuilderTab({ onSave }) {
     isComposing,
     onCompositionStart,
     onCompositionEnd,
-  } = useKeyboardNavigation(rows, setRows, fields, deleteRow, toggleSelect, editingCell, setEditingCell);
+  } = useKeyboardNavigation(
+    rows,
+    setRows,
+    fields,
+    deleteRow,
+    toggleSelect,
+    editingCell,
+    setEditingCell
+  );
+
+  // Undo/Redo 래퍼 함수 (선택 상태 클리어)
+  const handleUndo = useCallback(() => {
+    undo();
+    setSelectedCell(null);
+    setSelectedCellRange(null);
+    setSelectedRowIndex(null);
+    setSelectedRange(null);
+  }, [
+    undo,
+    setSelectedCell,
+    setSelectedCellRange,
+    setSelectedRowIndex,
+    setSelectedRange,
+  ]);
+
+  const handleRedo = useCallback(() => {
+    redo();
+    setSelectedCell(null);
+    setSelectedCellRange(null);
+    setSelectedRowIndex(null);
+    setSelectedRange(null);
+  }, [
+    redo,
+    setSelectedCell,
+    setSelectedCellRange,
+    setSelectedRowIndex,
+    setSelectedRange,
+  ]);
 
   // 셀 클릭 핸들러 (편집 모드로 전환)
   const handleCellClick = (rowIndex, field) => {
@@ -90,6 +228,7 @@ function BuilderTab({ onSave }) {
       }
     }
 
+    // IME 조합 중에는 히스토리는 그대로 두고 값만 업데이트
     setRows((prevRows) =>
       prevRows.map((row) =>
         row.id === id ? { ...row, [field]: processedValue } : row
@@ -100,7 +239,15 @@ function BuilderTab({ onSave }) {
   // 행 추가
   const addRow = () => {
     const newRow = createEmptyRow();
-    setRows([...rows, newRow]);
+    // 새 행 추가 후, 새 행의 첫 번째 필드로 커서 이동할 수 있도록 editingCell 초기화
+    setHistoryState((prev) => {
+      const nextRows = [...prev.rows, newRow];
+      return {
+        ...prev,
+        rows: nextRows,
+        editingCell: { rowIndex: nextRows.length - 1, field: fields[0] },
+      };
+    });
   };
 
   // 모든 필드 초기화
@@ -179,7 +326,7 @@ function BuilderTab({ onSave }) {
   const openUrlInNewTab = (row) => {
     const url = buildUTMUrl(row);
     if (url) {
-      window.open(url, '_blank', 'noopener,noreferrer');
+      window.open(url, "_blank", "noopener,noreferrer");
       showToast("새 탭에서 열었습니다!", "success");
     }
   };
@@ -193,26 +340,58 @@ function BuilderTab({ onSave }) {
     return () => clearTimeout(timer);
   }, [rows]);
 
-  // 키보드 단축키 (Cmd+Z 막기, Cmd+S 저장)
+  // editingCell 변경 시 해당 셀로 포커스 이동 (노션/구글 시트 스타일 Undo/Redo용)
+  useEffect(() => {
+    if (!editingCell) return;
+    const { rowIndex, field } = editingCell;
+    if (rowIndex == null || !field) return;
+
+    requestAnimationFrame(() => {
+      const selector = `input[data-row-index="${rowIndex}"][data-field="${field}"]`;
+      const input = document.querySelector(selector);
+      if (input) {
+        input.focus();
+        // 커서를 텍스트 끝으로 이동
+        const length = input.value?.length ?? 0;
+        input.setSelectionRange(length, length);
+      }
+    });
+  }, [editingCell]);
+
+  // 키보드 단축키 (Cmd+Z Undo, Cmd+Shift+Z Redo, Cmd+S 저장)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Cmd+Z, Cmd+Shift+Z 완전히 막기
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+      // Cmd+Z: Undo
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         e.stopPropagation();
+        if (canUndo) {
+          handleUndo();
+        }
+        return;
+      }
+
+      // Cmd+Shift+Z: Redo
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (canRedo) {
+          handleRedo();
+        }
+        return;
       }
 
       // Cmd+S: 선택 항목 저장
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         e.stopPropagation();
         saveSelected();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [rows, onSave, showToast]);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [canUndo, canRedo, handleUndo, handleRedo, saveSelected]);
 
   return (
     <div className="max-w-full mx-auto p-6">

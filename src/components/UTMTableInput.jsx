@@ -51,7 +51,7 @@ function UTMTableInput({
         tabIndex={0}
         className="w-full bg-transparent text-gray-300 px-2 py-1 text-sm min-h-[28px] cursor-text focus:outline-none"
       >
-        {value || <span className="text-gray-600">{placeholder}</span>}
+        {value || (rowIndex === 0 && <span className="text-gray-600">{placeholder}</span>)}
       </div>
     );
   }
@@ -69,7 +69,7 @@ function UTMTableInput({
       onCompositionEnd={onCompositionEnd}
       data-row-index={rowIndex}
       data-field={field}
-      placeholder={placeholder}
+      placeholder={rowIndex === 0 ? placeholder : ""}
       className="w-full bg-transparent text-gray-300 px-2 py-1 focus:bg-[#1a2642] focus:outline-none text-sm"
     />
   );
