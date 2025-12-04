@@ -24,7 +24,7 @@ function HomePage() {
               UTM Builder
             </h3>
             <p className="text-gray-200">
-            “Easily and quickly create and manage UTM parameters.”
+            Easily and quickly create and manage UTM parameters
             </p>
           </Link>
 
