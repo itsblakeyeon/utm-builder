@@ -331,6 +331,25 @@ function BuilderTab({ onSave }) {
     }
   };
 
+  // 선택된 행 일괄 삭제
+  const deleteSelectedRows = () => {
+    const selectedRows = rows.filter((row) => row.selected);
+
+    if (selectedRows.length === 0) {
+      showToast("삭제할 행을 선택해주세요!", "warning");
+      return;
+    }
+
+    if (rows.length === selectedRows.length) {
+      showToast("최소 1개의 행은 필요합니다!", "warning");
+      return;
+    }
+
+    const remainingRows = rows.filter((row) => !row.selected);
+    setRows(remainingRows);
+    showToast(`${selectedRows.length}개 행이 삭제되었습니다!`, "success");
+  };
+
   // localStorage에 자동 저장 (디바운스)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -393,27 +412,54 @@ function BuilderTab({ onSave }) {
     return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, [canUndo, canRedo, handleUndo, handleRedo, saveSelected]);
 
+  // 선택된 행이 있는지 확인
+  const hasSelectedRows = rows.some((row) => row.selected);
+  const allSelected = rows.length > 0 && rows.every((row) => row.selected);
+
   return (
     <div className="max-w-full mx-auto p-6">
       {/* 컨트롤 버튼들 */}
-      <div className="mb-4 flex gap-3">
+      <div className="mb-4 flex gap-3 items-center">
+        {/* 위험 액션 (좌측 끝) */}
         <button
           onClick={handleReset}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded font-medium transition duration-200"
+          className="border border-gray-600 text-gray-400 hover:bg-gray-800 hover:text-gray-300 px-4 py-2 rounded font-medium transition duration-200"
+          title="모든 데이터 삭제"
         >
           전체 초기화
         </button>
+
+        {/* 우측으로 밀기 */}
+        <div className="flex-1"></div>
+
+        {/* 선택 관련 */}
         <button
           onClick={toggleSelectAll}
           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded font-medium transition duration-200"
         >
-          전체 선택
+          {allSelected ? "전체 해제" : "전체 선택"}
         </button>
+
+        {/* 구분선 */}
+        <div className="h-8 w-px bg-gray-600"></div>
+
+        {/* 선택된 항목 액션 */}
         <button
           onClick={saveSelected}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium transition duration-200"
+          disabled={!hasSelectedRows}
+          className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium transition duration-200"
+          title="선택 항목 저장 (⌘S)"
         >
-          선택 항목 저장
+          선택 저장
+        </button>
+
+        <button
+          onClick={deleteSelectedRows}
+          disabled={!hasSelectedRows}
+          className="bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded font-medium transition duration-200"
+          title="선택한 행 삭제 (Delete)"
+        >
+          선택 삭제
         </button>
       </div>
 
@@ -444,7 +490,6 @@ function BuilderTab({ onSave }) {
                 onCompositionEnd={onCompositionEnd}
                 onCopyUrl={copyUrl}
                 onTestUrl={openUrlInNewTab}
-                onDeleteRow={deleteRow}
                 onRowSelectionKeyDown={handleRowSelectionKeyDown}
                 onCellClick={handleCellClick}
               />

@@ -22,7 +22,6 @@ function UTMTableRow({
   onCompositionEnd,
   onCopyUrl,
   onTestUrl,
-  onDeleteRow,
   onRowSelectionKeyDown,
   onCellClick,
 }) {
@@ -159,26 +158,22 @@ function UTMTableRow({
 
       {/* 액션 버튼 */}
       <td className="px-2 py-1 border-b border-gray-700">
-        <div className="flex gap-1 justify-center">
+        <div className="flex gap-2 justify-center">
           <button
             onClick={() => onCopyUrl(row)}
             disabled={!generatedUrl}
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs transition duration-200"
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-sm font-medium transition duration-200"
+            title="URL 복사"
           >
             복사
           </button>
           <button
             onClick={() => onTestUrl(row)}
             disabled={!generatedUrl}
-            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-2 py-1 rounded text-xs transition duration-200"
+            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-sm font-medium transition duration-200"
+            title="새 탭에서 열기"
           >
             테스트
-          </button>
-          <button
-            onClick={() => onDeleteRow(row.id)}
-            className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs transition duration-200"
-          >
-            삭제
           </button>
         </div>
       </td>
